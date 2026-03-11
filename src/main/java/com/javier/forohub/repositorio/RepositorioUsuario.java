@@ -1,0 +1,9 @@
+package com.javier.forohub.repositorio;
+
+import com.javier.forohub.dominio.usuario.Usuario;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+
+public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
+    UserDetails findByLogin(String login);
+}
