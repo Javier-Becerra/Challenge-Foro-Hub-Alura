@@ -24,9 +24,16 @@ public class ControladorTopico {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Topico> crear(@RequestBody @Valid DatosRegistroTopico datos, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity crear(@RequestBody @Valid DatosRegistroTopico datos, UriComponentsBuilder uriBuilder) {
+        // REGLA DE NEGOCIO: Verificar duplicados
+        var existe = repository.existsByTituloAndMensaje(datos.titulo(), datos.mensaje());
+        if (existe) {
+            return ResponseEntity.badRequest().body("Error: Ya existe un tópico con el mismo título y mensaje.");
+        }
+
         Topico topico = new Topico(null, datos.titulo(), datos.mensaje(), null, datos.autor(), datos.curso());
         repository.save(topico);
+        
         URI url = uriBuilder.path("/topicos/{id}").buildAndExpand(topico.getId()).toUri();
         return ResponseEntity.created(url).body(topico);
     }
@@ -45,15 +52,21 @@ public class ControladorTopico {
     @PutMapping("/{id}")
     @Transactional
     public ResponseEntity actualizar(@PathVariable Long id, @RequestBody @Valid DatosRegistroTopico datos) {
+        // REGLA DE NEGOCIO: Al actualizar, también se podría validar que no choque con otro existente
         Topico topico = repository.getReferenceById(id);
         topico.setTitulo(datos.titulo());
         topico.setMensaje(datos.mensaje());
+        // El @Transactional se encarga de disparar el update en la BD
         return ResponseEntity.ok(topico);
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity eliminar(@PathVariable Long id) {
+        // Es buena práctica verificar si existe antes de borrar para evitar el error 500
+        if (!repository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
