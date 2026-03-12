@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.javier.forohub.dominio.usuario.Usuario;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,10 +14,11 @@ import java.time.ZoneOffset;
 @Service
 public class Token {
 
-    private String secret="123456";
+    @Value("${api.security.secret}")
+    private String secret;
 
-    public String generarToken(Usuario usuario){
-        try{
+    public String generarToken(Usuario usuario) {
+        try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
                     .withIssuer("foro hub")
@@ -24,17 +26,21 @@ public class Token {
                     .withExpiresAt(LocalDateTime.now().plusHours(2)
                             .toInstant(ZoneOffset.of("-03:00")))
                     .sign(algorithm);
-        }catch (JWTCreationException e){throw new RuntimeException();}
+        } catch (JWTCreationException e) {
+            throw new RuntimeException("Error al generar el token", e);
+        }
     }
 
-    public String getSubject(String token){
-        try{
+    public String getSubject(String token) {
+        try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
                     .withIssuer("foro hub")
                     .build()
                     .verify(token)
                     .getSubject();
-        }catch (JWTVerificationException e){return null;}
+        } catch (JWTVerificationException e) {
+            return null;
+        }
     }
 }
